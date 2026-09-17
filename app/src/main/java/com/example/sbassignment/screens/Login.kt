@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sbassignment.screens.components.OutlinedTextFieldItem
 
 @Composable
 fun LoginScreen() {
@@ -59,7 +60,8 @@ fun LoginScreen() {
             OutlinedTextFieldItem(
                 value = email,
                 onValueChange = { email = it },
-                placeholder = "Email"
+                placeholder = "Email",
+                modifier = Modifier.padding(horizontal = 8.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -67,7 +69,8 @@ fun LoginScreen() {
             OutlinedTextFieldItem(
                 value = password,
                 onValueChange = { password = it },
-                placeholder = "Password"
+                placeholder = "Password",
+                modifier = Modifier.padding(horizontal = 8.dp)
             )
 
             Text(
@@ -97,29 +100,6 @@ fun LoginScreen() {
             }
         }
     }
-}
-
-@Composable
-fun OutlinedTextFieldItem(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        placeholder = { Text(placeholder) },
-        singleLine = true,
-        shape = RoundedCornerShape(8.dp),
-        colors = TextFieldDefaults.colors(
-            focusedTextColor = Color.Black,
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White,
-            unfocusedTextColor = Color.Black,
-            cursorColor = Color.Black
-        )
-    )
-
 }
 
 @Preview(showBackground = true)
