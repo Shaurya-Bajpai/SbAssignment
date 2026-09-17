@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
@@ -44,12 +43,12 @@ val staffList = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminScreen() {
+fun StaffListScreen() {
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Admin Screen") },
+                title = { Text(text = "Staff") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Black,
                     titleContentColor = Color.White
@@ -111,6 +110,6 @@ fun CardItem(staffMember: StaffEntity) {
 
 @Preview(showBackground = true)
 @Composable
-fun AdminScreenPreview() {
-    AdminScreen()
+fun StaffListScreenPreview() {
+    StaffListScreen()
 }
