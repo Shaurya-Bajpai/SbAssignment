@@ -5,7 +5,9 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.border
@@ -36,11 +38,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.sbassignment.R
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.FaceDetection
+import com.google.mlkit.vision.face.FaceDetectorOptions
+import java.util.concurrent.Executors
 
+@OptIn(ExperimentalGetImage::class)
 @Composable
 fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    var faceDetected by remember { mutableStateOf(false) }
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -68,6 +76,14 @@ fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
         return
     }
 
+    val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            cameraExecutor.shutdown()
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         // CAMERA PREVIEW
         AndroidView(
@@ -84,9 +100,48 @@ fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
                             it.surfaceProvider = previewView.surfaceProvider
                         }
 
+                    // Face detector
+                    val detectorOptions = FaceDetectorOptions.Builder()
+                            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
+                            .setMinFaceSize(0.15f)
+                            .build()
+
+                    val faceDetector = FaceDetection.getClient(detectorOptions)
+
+                    // Image analysis
+                    val imageAnalyzer = ImageAnalysis.Builder()
+                            .setBackpressureStrategy(
+                                ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST
+                            )
+                            .build()
+
+                    imageAnalyzer.setAnalyzer(cameraExecutor) { imageProxy ->
+                        val mediaImage = imageProxy.image
+                        if (mediaImage != null) {
+                            val image = InputImage.fromMediaImage(
+                                    mediaImage,
+                                    imageProxy.imageInfo.rotationDegrees
+                                )
+
+                            faceDetector
+                                .process(image)
+                                .addOnSuccessListener { faces ->
+                                    faceDetected = faces.isNotEmpty()
+                                }
+                                .addOnFailureListener {
+                                    faceDetected = false
+                                }
+                                .addOnCompleteListener {
+                                    imageProxy.close()
+                                }
+                        } else {
+                            imageProxy.close()
+                        }
+                    }
+
                     val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
                     cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
+                    cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, imageAnalyzer)
 
                 }, ContextCompat.getMainExecutor(ctx))
 
@@ -113,7 +168,7 @@ fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
 
         // INSTRUCTION
         Text(
-            text = "Position your face inside the frame",
+            text = if (faceDetected) "Face detected" else "Position your face inside the frame",
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
@@ -125,7 +180,11 @@ fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
         Box(modifier = Modifier
                 .size(280.dp)
                 .align(Alignment.Center)
-                .border(width = 3.dp, color = Color.White, shape = RoundedCornerShape(24.dp))
+                .border(
+                    width = 3.dp,
+                    color = if (faceDetected) Color.Green else Color.White,
+                    shape = RoundedCornerShape(24.dp)
+                )
         )
 
         // CAPTURE BUTTON
@@ -138,8 +197,11 @@ fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
                 .navigationBarsPadding()
                 .padding(bottom = 32.dp)
         ) {
+
             Icon(
-                painter = painterResource(R.drawable.outline_camera_alt_24),
+                painter = painterResource(
+                    R.drawable.outline_camera_alt_24
+                ),
                 contentDescription = "Capture"
             )
         }
