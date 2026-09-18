@@ -43,12 +43,11 @@ val staffList = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StaffListScreen() {
-
+fun AdminScreen() {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Staff") },
+                title = { Text(text = "Admin") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Black,
                     titleContentColor = Color.White
@@ -110,6 +109,6 @@ fun CardItem(staffMember: StaffEntity) {
 
 @Preview(showBackground = true)
 @Composable
-fun StaffListScreenPreview() {
-    StaffListScreen()
+fun AdminScreenPreview() {
+    AdminScreen()
 }

@@ -1,5 +1,6 @@
 package com.example.sbassignment.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,9 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,13 +23,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sbassignment.screens.components.OutlinedTextFieldItem
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(onAdminNavigate: () -> Unit = {}, onStaffNavigate: () -> Unit = {}) {
+    val context = LocalContext.current
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -83,7 +84,17 @@ fun LoginScreen() {
             )
 
             Button(
-                onClick = {},
+                onClick = {
+                    if(email == "admin" && password == "admin") {
+                        onAdminNavigate()
+                    } else if(email == "staff" && password == "staff") {
+                        onStaffNavigate()
+                    } else if (email.isEmpty() || password.isEmpty()) {
+                        Toast.makeText(context, "Please enter email and password", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Wrong Credentials", Toast.LENGTH_SHORT).show()
+                    }
+                },
                 modifier = Modifier
                     .padding(top = 24.dp)
                     .fillMaxWidth(),
