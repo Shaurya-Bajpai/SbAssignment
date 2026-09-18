@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sbassignment.screens.LoginScreen
 import com.example.sbassignment.screens.components.OutlinedTextFieldItem
+import com.example.sbassignment.screens.components.SectionDivider
 
 @Composable
 fun ProfileScreen() {
@@ -77,30 +78,7 @@ fun ProfileScreen() {
             }
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            HorizontalDivider(
-                modifier = Modifier
-                    .weight(1f)
-                    .align(Alignment.CenterVertically),
-                color = Color.Gray,
-                thickness = 1.dp
-            )
-            Text(
-                text = "Attendance records",
-                color = Color.Black,
-                fontSize = 16.sp
-            )
-            HorizontalDivider(
-                modifier = Modifier
-                    .weight(1f)
-                    .align(Alignment.CenterVertically),
-                color = Color.Gray,
-                thickness = 1.dp
-            )
-        }
+        SectionDivider("Attendance")
 
 
         LazyColumn(
