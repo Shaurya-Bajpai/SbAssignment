@@ -5,10 +5,10 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.Preview
 import androidx.camera.core.ExperimentalGetImage
-import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.core.ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED
+import androidx.camera.mlkit.vision.MlKitAnalyzer
+import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -32,14 +32,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.sbassignment.R
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.face.FaceContour
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import java.util.concurrent.Executors
@@ -49,6 +48,7 @@ import java.util.concurrent.Executors
 fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val density = LocalDensity.current
     var faceDetected by remember { mutableStateOf(false) }
 
     var hasCameraPermission by remember {
@@ -90,127 +90,83 @@ fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
-                val previewView = PreviewView(ctx)
-                val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
 
-                cameraProviderFuture.addListener({
-                    val cameraProvider = cameraProviderFuture.get()
-                    val preview = Preview.Builder()
-                        .build()
-                        .also {
-                            it.surfaceProvider = previewView.surfaceProvider
-                        }
+                val previewView = PreviewView(ctx).apply {
+                    scaleType = PreviewView.ScaleType.FILL_CENTER
+                }
 
-                    // Face detector
-                    val detectorOptions = FaceDetectorOptions.Builder()
+                val cameraController = LifecycleCameraController(ctx)
+                cameraController.cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+
+                val detectorOptions = FaceDetectorOptions.Builder()
                         .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
                         .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
                         .setMinFaceSize(0.25f)
                         .build()
 
-                    val faceDetector = FaceDetection.getClient(detectorOptions)
+                val faceDetector = FaceDetection.getClient(detectorOptions)
+                val mainExecutor = ContextCompat.getMainExecutor(ctx)
+                val mlKitAnalyzer = MlKitAnalyzer(
+                    listOf(faceDetector),
+                    COORDINATE_SYSTEM_VIEW_REFERENCED,
+                    mainExecutor
+                ) { result ->
 
-                    // Image analysis
-                    val imageAnalyzer = ImageAnalysis.Builder()
-                            .setBackpressureStrategy(
-                                ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST
-                            )
-                            .build()
-
-                    imageAnalyzer.setAnalyzer(cameraExecutor) { imageProxy ->
-                        val mediaImage = imageProxy.image
-                        if (mediaImage != null) {
-                            val image = InputImage.fromMediaImage(
-                                    mediaImage,
-                                    imageProxy.imageInfo.rotationDegrees
-                                )
-
-                            faceDetector
-                                .process(image)
-                                .addOnSuccessListener { faces ->
-                                    val face = faces.firstOrNull()
-                                    if (face == null) {
-                                        faceDetected = false
-                                        return@addOnSuccessListener
-                                    }
-
-                                    val bounds = face.boundingBox
-                                    val imageWidth = image.width
-                                    val imageHeight = image.height
-                                    // 1. FACE MUST BE COMPLETELY INSIDE IMAGE
-                                    val marginX = (imageWidth * 0.05f).toInt()
-                                    val marginY = (imageHeight * 0.05f).toInt()
-
-                                    val completelyInsideImage =
-                                        bounds.left >= marginX &&
-                                        bounds.top >= marginY &&
-                                        bounds.right <= imageWidth - marginX &&
-                                        bounds.bottom <= imageHeight - marginY
-
-                                    if (!completelyInsideImage) {
-                                        faceDetected = false
-                                        return@addOnSuccessListener
-                                    }
-
-                                    // 2. FACE MUST BE LARGE ENOUGH
-                                    val faceWidthRatio = bounds.width().toFloat() / imageWidth.toFloat()
-                                    val faceHeightRatio = bounds.height().toFloat() / imageHeight.toFloat()
-                                    val largeEnough = faceWidthRatio >= 0.25f && faceHeightRatio >= 0.25f
-                                    if (!largeEnough) {
-                                        faceDetected = false
-                                        return@addOnSuccessListener
-                                    }
-
-                                    // 3. FACE MUST BE REASONABLY CENTERED
-                                    val faceCenterX = bounds.centerX().toFloat()
-                                    val faceCenterY = bounds.centerY().toFloat()
-                                    val imageCenterX = imageWidth / 2f
-                                    val imageCenterY = imageHeight / 2f
-                                    val centerToleranceX = imageWidth * 0.20f
-                                    val centerToleranceY = imageHeight * 0.20f
-                                    val centered = kotlin.math.abs(faceCenterX - imageCenterX) <= centerToleranceX &&
-                                            kotlin.math.abs(faceCenterY - imageCenterY) <= centerToleranceY
-
-                                    if (!centered) {
-                                        faceDetected = false
-                                        return@addOnSuccessListener
-                                    }
-
-                                    // 4. FACE SHOULD BE FACING CAMERA
-                                    val frontal = kotlin.math.abs(face.headEulerAngleY) <= 20f &&
-                                            kotlin.math.abs(face.headEulerAngleZ) <= 15f
-                                    if (!frontal) {
-                                        faceDetected = false
-                                        return@addOnSuccessListener
-                                    }
-
-                                    // 5. FACE CONTOUR MUST EXIST
-                                    val faceContour = face.getContour(FaceContour.FACE)
-                                    val hasFaceContour = faceContour != null && faceContour.points.size >= 20
-                                    if (!hasFaceContour) {
-                                        faceDetected = false
-                                        return@addOnSuccessListener
-                                    }
-
-                                    // EVERYTHING PASSED
-                                    faceDetected = true
-                                }
-                                .addOnFailureListener {
-                                    faceDetected = false
-                                }
-                                .addOnCompleteListener {
-                                    imageProxy.close()
-                                }
-                        } else {
-                            imageProxy.close()
-                        }
+                    val faces = result?.getValue(faceDetector)
+                    val face = faces?.firstOrNull()
+                    if (face == null) {
+                        faceDetected = false
+                        return@MlKitAnalyzer
                     }
 
-                    val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
-                    cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, imageAnalyzer)
+                    // 1. FACE SIZE
+                    val faceWidth = face.boundingBox.width()
+                    val faceHeight = face.boundingBox.height()
+                    val minimumFaceSize = 150
+                    if (faceWidth < minimumFaceSize ||faceHeight < minimumFaceSize) {
+                        faceDetected = false
+                        return@MlKitAnalyzer
+                    }
 
-                }, ContextCompat.getMainExecutor(ctx))
+                    // 2. FACE MUST BE REASONABLY FRONTAL
+                    val frontal = kotlin.math.abs(face.headEulerAngleY) <= 20f &&
+                                kotlin.math.abs(face.headEulerAngleZ) <= 15f
+                    if (!frontal) {
+                        faceDetected = false
+                        return@MlKitAnalyzer
+                    }
+
+                    // 3. FRAME COORDINATES
+                    val frameSizePx = with(density) { 280.dp.toPx() }
+                    val previewWidth = previewView.width.toFloat()
+                    val previewHeight = previewView.height.toFloat()
+
+                    if (previewWidth <= 0f ||previewHeight <= 0f) {
+                        faceDetected = false
+                        return@MlKitAnalyzer
+                    }
+
+                    val frameLeft = (previewWidth - frameSizePx) / 2f
+                    val frameTop = (previewHeight - frameSizePx) / 2f
+                    val frameRight = frameLeft + frameSizePx
+                    val frameBottom = frameTop + frameSizePx
+
+                    // 4. ML KIT BOUNDING BOX IS NOW ALREADY IN PREVIEWVIEW COORDINATES
+                    val faceRect = face.boundingBox
+                    val insideFrame =
+                        faceRect.left >= frameLeft &&
+                        faceRect.top >= frameTop &&
+                        faceRect.right <= frameRight &&
+                        faceRect.bottom <= frameBottom
+
+                    faceDetected = insideFrame
+                }
+
+                cameraController.setImageAnalysisAnalyzer(cameraExecutor, mlKitAnalyzer)
+
+                previewView.controller = cameraController
+
+                cameraController.bindToLifecycle(lifecycleOwner)
 
                 previewView
             }

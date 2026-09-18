@@ -38,18 +38,21 @@ android {
 }
 
 dependencies {
-    val cameraxVersion = "1.4.2"
-    implementation("androidx.camera:camera-camera2:$cameraxVersion")
-    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
-    implementation("androidx.camera:camera-view:$cameraxVersion")
+
+    // CameraX
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.mlkit.vision)
 
     // ML Kit
-    implementation("com.google.mlkit:face-detection:16.1.7")
+    implementation(libs.face.detection)
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.10.1")
+    implementation(libs.androidx.navigation.compose)
 
-    implementation("androidx.compose.material:material-icons-core")
+    implementation(libs.androidx.compose.material.icons.core)
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
