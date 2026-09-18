@@ -39,6 +39,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.sbassignment.R
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.FaceContour
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import java.util.concurrent.Executors
@@ -102,9 +103,10 @@ fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
 
                     // Face detector
                     val detectorOptions = FaceDetectorOptions.Builder()
-                            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
-                            .setMinFaceSize(0.15f)
-                            .build()
+                        .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
+                        .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
+                        .setMinFaceSize(0.25f)
+                        .build()
 
                     val faceDetector = FaceDetection.getClient(detectorOptions)
 
@@ -126,7 +128,72 @@ fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
                             faceDetector
                                 .process(image)
                                 .addOnSuccessListener { faces ->
-                                    faceDetected = faces.isNotEmpty()
+                                    val face = faces.firstOrNull()
+                                    if (face == null) {
+                                        faceDetected = false
+                                        return@addOnSuccessListener
+                                    }
+
+                                    val bounds = face.boundingBox
+                                    val imageWidth = image.width
+                                    val imageHeight = image.height
+                                    // 1. FACE MUST BE COMPLETELY INSIDE IMAGE
+                                    val marginX = (imageWidth * 0.05f).toInt()
+                                    val marginY = (imageHeight * 0.05f).toInt()
+
+                                    val completelyInsideImage =
+                                        bounds.left >= marginX &&
+                                        bounds.top >= marginY &&
+                                        bounds.right <= imageWidth - marginX &&
+                                        bounds.bottom <= imageHeight - marginY
+
+                                    if (!completelyInsideImage) {
+                                        faceDetected = false
+                                        return@addOnSuccessListener
+                                    }
+
+                                    // 2. FACE MUST BE LARGE ENOUGH
+                                    val faceWidthRatio = bounds.width().toFloat() / imageWidth.toFloat()
+                                    val faceHeightRatio = bounds.height().toFloat() / imageHeight.toFloat()
+                                    val largeEnough = faceWidthRatio >= 0.25f && faceHeightRatio >= 0.25f
+                                    if (!largeEnough) {
+                                        faceDetected = false
+                                        return@addOnSuccessListener
+                                    }
+
+                                    // 3. FACE MUST BE REASONABLY CENTERED
+                                    val faceCenterX = bounds.centerX().toFloat()
+                                    val faceCenterY = bounds.centerY().toFloat()
+                                    val imageCenterX = imageWidth / 2f
+                                    val imageCenterY = imageHeight / 2f
+                                    val centerToleranceX = imageWidth * 0.20f
+                                    val centerToleranceY = imageHeight * 0.20f
+                                    val centered = kotlin.math.abs(faceCenterX - imageCenterX) <= centerToleranceX &&
+                                            kotlin.math.abs(faceCenterY - imageCenterY) <= centerToleranceY
+
+                                    if (!centered) {
+                                        faceDetected = false
+                                        return@addOnSuccessListener
+                                    }
+
+                                    // 4. FACE SHOULD BE FACING CAMERA
+                                    val frontal = kotlin.math.abs(face.headEulerAngleY) <= 20f &&
+                                            kotlin.math.abs(face.headEulerAngleZ) <= 15f
+                                    if (!frontal) {
+                                        faceDetected = false
+                                        return@addOnSuccessListener
+                                    }
+
+                                    // 5. FACE CONTOUR MUST EXIST
+                                    val faceContour = face.getContour(FaceContour.FACE)
+                                    val hasFaceContour = faceContour != null && faceContour.points.size >= 20
+                                    if (!hasFaceContour) {
+                                        faceDetected = false
+                                        return@addOnSuccessListener
+                                    }
+
+                                    // EVERYTHING PASSED
+                                    faceDetected = true
                                 }
                                 .addOnFailureListener {
                                     faceDetected = false
