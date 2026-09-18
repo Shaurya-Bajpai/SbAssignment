@@ -5,7 +5,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.sbassignment.screens.LoginScreen
-import com.example.sbassignment.screens.admin.ProfileScreen
+import com.example.sbassignment.screens.camera.FaceCameraScreen
+import com.example.sbassignment.screens.staff.ProfileScreen
 import com.example.sbassignment.screens.staff.StaffScreen
 
 @Composable
@@ -22,11 +23,26 @@ fun AppNavigation() {
         }
 
         // Staff Screen
-        composable(Screen.Staff.route) { StaffScreen() }
+        composable(Screen.Staff.route) {
+            StaffScreen(
+                onStaffClick = { staffId ->
+                    navController.navigate("face_camera/$staffId")
+                }
+            )
+        }
 
+        composable(Screen.Profile.route) { ProfileScreen() }
 
-//        composable(Screen.Admin.route) { AdminScreen(onNavigate = { navController.navigate("profile") }) }
-        composable("profile") { ProfileScreen() }
+        composable("face_camera/{staffId}") { backStackEntry ->
+            val staffId = backStackEntry.arguments?.getString("staffId")
+
+            FaceCameraScreen(
+                staffId = staffId.orEmpty(),
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
     }
 
 }

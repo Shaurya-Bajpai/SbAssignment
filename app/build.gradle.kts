@@ -6,7 +6,7 @@ plugins {
 android {
     namespace = "com.example.sbassignment"
     compileSdk {
-        version = release(36) {
+        version = release(37) {
             minorApiLevel = 1
         }
     }
@@ -38,7 +38,14 @@ android {
 }
 
 dependencies {
+    val cameraxVersion = "1.4.2"
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
+
+    // Navigation
     implementation("androidx.navigation:navigation-compose:2.10.1")
+
     implementation("androidx.compose.material:material-icons-core")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
