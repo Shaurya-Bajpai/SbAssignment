@@ -40,6 +40,9 @@ android {
 
 dependencies {
 
+    // Location
+    implementation(libs.play.services.location)
+
     // CameraX
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
@@ -58,7 +61,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     //Coil
-    implementation("io.coil-kt.coil3:coil-compose:3.0.4")
+    implementation(libs.coil.compose)
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
