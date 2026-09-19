@@ -45,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.sbassignment.R
+import com.example.sbassignment.data.FaceCaptureMode
+import com.example.sbassignment.data.FaceCaptureResult
 import com.example.sbassignment.face.FaceCropper
 import com.example.sbassignment.face.FaceEmbeddingStore
 import com.example.sbassignment.face.FaceImageUtils
@@ -56,7 +58,11 @@ import java.util.concurrent.Executors
 
 @OptIn(ExperimentalGetImage::class)
 @Composable
-fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
+fun FaceCameraScreen(
+    mode: FaceCaptureMode,
+    onCaptureResult: (FaceCaptureResult) -> Unit,
+    onBack: () -> Unit
+) {
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -77,7 +83,6 @@ fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
     var faceDetected by remember { mutableStateOf(false) }
     val faceNetModel = remember { FaceNetModel(context) }
     val faceDetector = remember { FaceDetection.getClient(detectorOptions) }
-    val embeddingStore = remember { FaceEmbeddingStore(context) }
 
     // Controller
     val cameraController = remember { LifecycleCameraController(context) }
@@ -330,12 +335,16 @@ fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
                                         Log.e("FACE_RECOGNITION", "Embedding L2 norm = $norm")
 
                                         // Save the embedding of the staff
-                                        embeddingStore.saveEmbedding(staffId = staffId, embedding = embedding)
-
-                                        Log.e("FACE_RECOGNITION", "Embedding saved for staffId=$staffId")
+                                        val result = FaceCaptureResult(image = bitmap, embedding = embedding)
+                                        ContextCompat
+                                            .getMainExecutor(context)
+                                            .execute {
+                                                isProcessing = false
+                                                onCaptureResult(result)
+                                            }
 
                                         croppedFace.recycle()
-                                        bitmap.recycle()
+//                                        bitmap.recycle()
 
                                         ContextCompat
                                             .getMainExecutor(context)

@@ -34,16 +34,23 @@ import androidx.compose.ui.unit.sp
 import com.example.sbassignment.data.StaffEntity
 
 val staffList = listOf(
-    StaffEntity("1", "John Doe", "face_embedding_1", "face_image_path_1"),
-    StaffEntity("2", "Jane Smith", "face_embedding_2", "face_image_path_2"),
-    StaffEntity("3", "Bob Johnson", "face_embedding_3", "face_image_path_3"),
-    StaffEntity("4", "Alice Brown", "face_embedding_4", "face_image_path_4"),
-    StaffEntity("5", "Charlie Wilson", "face_embedding_5", "face_image_path_5"),
+    StaffEntity(
+        employeeId = "1",
+        name = "John Doe",
+        faceEmbedding = floatArrayOf(0.1f, 0.2f, 0.3f),
+        faceImagePath = "face_image_path_1"
+    ),
+    StaffEntity(
+        employeeId = "2",
+        name = "Jane Smith",
+        faceEmbedding = floatArrayOf(0.1f, 0.2f, 0.3f),
+        faceImagePath = "face_image_path_2"
+    ),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminScreen() {
+fun AdminScreen(onAddStaffButton: () -> Unit = {}) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -56,7 +63,7 @@ fun AdminScreen() {
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { },
+                onClick = { onAddStaffButton() },
                 containerColor = Color.Black.copy(0.5f),
                 shape = FloatingActionButtonDefaults.largeShape,
                 elevation = FloatingActionButtonDefaults.elevation(

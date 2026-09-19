@@ -1,7 +1,8 @@
 package com.example.sbassignment.screens.admin
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,31 +18,41 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sbassignment.R
+import com.example.sbassignment.data.FaceCaptureResult
 import com.example.sbassignment.screens.components.OutlinedTextFieldItem
 
 @Composable
-fun AddStaffScreen() {
-    var name by remember { mutableStateOf("") }
-    var empId by remember { mutableStateOf("") }
+fun AddStaffScreen(
+    name: String,
+    empId: String,
+    onNameChange: (String) -> Unit,
+    onEmpIdChange: (String) -> Unit,
+    capturedResult: FaceCaptureResult?,
+    onCaptureFace: () -> Unit,
+    onAddDetails: (name: String, empId: String, capturedImage: FaceCaptureResult) -> Unit,
+    onReset: () -> Unit,
+) {
+    val capturedImage = capturedResult?.image
+
+    BackHandler {
+        onReset()
+    }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
@@ -54,7 +65,7 @@ fun AddStaffScreen() {
 
         OutlinedTextFieldItem(
             value = name,
-            onValueChange = { name = it },
+            onValueChange = { onNameChange(it) },
             placeholder = "Name"
         )
 
@@ -62,26 +73,30 @@ fun AddStaffScreen() {
 
         OutlinedTextFieldItem(
             value = empId,
-            onValueChange = { empId = it },
+            onValueChange = { onEmpIdChange(it) },
             placeholder = "Employee Id"
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Column(
+        /*
+         * Camera / Selfie Card
+         */
+        ElevatedCard(
             modifier = Modifier
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .width(200.dp)
+                .height(250.dp)
+                .border(BorderStroke(1.dp, Color.Black), RoundedCornerShape(12.dp)),
+            shape = RoundedCornerShape(12.dp),
+            onClick = onCaptureFace
         ) {
-            ElevatedCard(
-                modifier = Modifier
-                    .width(200.dp)
-                    .height(250.dp)
-                    .align(Alignment.CenterHorizontally)
-                    .border(BorderStroke(1.dp, Color.Black), RoundedCornerShape(12.dp)),
-                shape = RoundedCornerShape(12.dp),
-            ) {
+            if(capturedImage != null) {
+                Image(
+                    bitmap = capturedImage.asImageBitmap(),
+                    contentDescription = "Captured staff selfie",
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -90,14 +105,24 @@ fun AddStaffScreen() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(painter = painterResource(R.drawable.outline_camera_alt_24), contentDescription = "Camera", tint = Color.Black, modifier = Modifier.size(50.dp))
+
+                    Spacer(Modifier.height(12.dp))
+
+                    Text("Capture Selfie")
                 }
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(Modifier.weight(1f))
 
         Button(
-            onClick = {},
+            onClick = {
+                val result = capturedResult
+                if (name.isNotBlank() && empId.isNotBlank() && result != null) {
+                    onAddDetails(name.trim(), empId.trim(), result)
+                }
+            },
+            enabled = name.isNotBlank() && empId.isNotBlank() && capturedResult != null,
             modifier = Modifier
                 .padding(top = 24.dp)
                 .fillMaxWidth(),
@@ -118,5 +143,14 @@ fun AddStaffScreen() {
 @Preview(showBackground = true)
 @Composable
 fun AddStaffScreenPreview() {
-    AddStaffScreen()
+    AddStaffScreen(
+        name = "",
+        empId = "",
+        onNameChange = {},
+        onEmpIdChange = {},
+        capturedResult = null,
+        onCaptureFace = {},
+        onAddDetails = { _, _, _ -> },
+        onReset = {}
+    )
 }
