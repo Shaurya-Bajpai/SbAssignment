@@ -57,6 +57,9 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
+    //Coil
+    implementation("io.coil-kt.coil3:coil-compose:3.0.4")
+
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
