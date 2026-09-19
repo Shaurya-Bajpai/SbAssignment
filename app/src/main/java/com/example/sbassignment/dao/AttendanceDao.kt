@@ -16,4 +16,7 @@ interface AttendanceDao {
 
     @Query("SELECT * FROM attendance WHERE employeeId = :employeeId ORDER BY dateTime DESC")
     suspend fun getAttendanceForEmployee(employeeId: String): AttendanceEntity?
+
+    @Query("SELECT * FROM attendance WHERE employeeId = :employeeId ORDER BY dateTime DESC")
+    suspend fun getAttendanceForEmployeeList(employeeId: String): List<AttendanceEntity>
 }

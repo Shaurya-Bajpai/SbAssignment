@@ -60,7 +60,8 @@ import kotlin.collections.emptyList
 @Composable
 fun AdminScreen(
     onAddStaffButton: () -> Unit = {},
-    staffRepository: StaffRepository
+    staffRepository: StaffRepository,
+    onStaffSelected: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     var staffList by remember { mutableStateOf<List<StaffEntity>>(emptyList()) }
@@ -119,7 +120,12 @@ fun AdminScreen(
             // List of Staff Members
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(items = staffList, key = { it.employeeId }) { staff ->
-                    CardItem(staff)
+                    CardItem(
+                        staffMember = staff,
+                        onClick = {
+                            onStaffSelected(staff.employeeId)
+                        }
+                    )
                 }
             }
         }
@@ -127,9 +133,9 @@ fun AdminScreen(
 }
 
 @Composable
-fun CardItem(staffMember: StaffEntity) {
+fun CardItem(staffMember: StaffEntity, onClick: () -> Unit) {
     ElevatedCard(
-        onClick = {},
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)

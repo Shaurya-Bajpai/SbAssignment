@@ -78,7 +78,10 @@ fun AppNavigation() {
         composable(Screen.Admin.route) {
             AdminScreen(
                 onAddStaffButton = { navController.navigate(Screen.AddStaff.route) },
-                staffRepository = staffRepository
+                staffRepository = staffRepository,
+                onStaffSelected = { employeeId ->
+                    navController.navigate("admin_profile/$employeeId")
+                }
             )
         }
 
@@ -336,7 +339,15 @@ fun AppNavigation() {
             )
         }
 
-        composable(Screen.Profile.route) { ProfileScreen() }
+        composable("admin_profile/{employeeId}") { backStackEntry ->
+            val employeeId = backStackEntry.arguments?.getString("employeeId").orEmpty()
+
+            ProfileScreen(
+                employeeId = employeeId,
+                staffRepository = staffRepository,
+                attendanceRepository = attendanceRepository
+            )
+        }
     }
 
 }

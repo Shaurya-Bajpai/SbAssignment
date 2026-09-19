@@ -9,10 +9,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -20,52 +22,104 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import com.example.sbassignment.data.AttendanceEntity
+import com.example.sbassignment.data.StaffEntity
+import com.example.sbassignment.data.repository.AttendanceRepository
+import com.example.sbassignment.data.repository.StaffRepository
 import com.example.sbassignment.screens.components.SectionDivider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(
+    employeeId: String,
+    staffRepository: StaffRepository,
+    attendanceRepository: AttendanceRepository
+) {
+    var staff by remember { mutableStateOf<StaffEntity?>(null) }
+    var attendanceList by remember {
+        mutableStateOf<List<AttendanceEntity>>(emptyList())
+    }
+
+    LaunchedEffect(employeeId) {
+        withContext(Dispatchers.IO) {
+            staff = staffRepository.getStaff(employeeId)
+            attendanceList =
+                attendanceRepository.getAttendanceForEmployeeList(employeeId)
+        }
+    }
+
+    if (staff == null) {
+        Text(
+            text = "Loading...",
+            modifier = Modifier.padding(16.dp)
+        )
+        return
+    }
+
+    val currentStaff = staff!!
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
-        
-        Column(
+
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(BorderStroke(1.dp, Color.Black), RoundedCornerShape(16.dp))
-                .background(Color.LightGray.copy(0.3f), RoundedCornerShape(16.dp))
-                .padding(vertical = 16.dp, horizontal = 12.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .border(
+                    BorderStroke(1.dp, Color.Black),
+                    RoundedCornerShape(16.dp)
+                )
+                .background(
+                    Color.LightGray.copy(alpha = 0.3f),
+                    RoundedCornerShape(16.dp)
+                )
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Profile Icon",
-                    modifier = Modifier.size(60.dp),
-                    tint = Color.Black
+
+                AsyncImage(
+                    model = File(currentStaff.faceImagePath),
+                    contentDescription = "Profile photo",
+                    modifier = Modifier.size(70.dp),
+                    contentScale = ContentScale.Crop
                 )
-                Column(modifier = Modifier.fillMaxWidth()) {
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column {
                     Text(
-                        text = "Name",
-                        color = Color.Black,
-                        fontSize = 20.sp,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        text = currentStaff.name,
+                        fontSize = 20.sp
                     )
 
+                    Spacer(modifier = Modifier.height(6.dp))
+
                     Text(
-                        text = "Code",
-                        color = Color.Black,
+                        text = currentStaff.employeeId,
                         fontSize = 16.sp
                     )
                 }
@@ -74,69 +128,71 @@ fun ProfileScreen() {
 
         SectionDivider("Attendance")
 
-
         LazyColumn(
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(5) { index ->
-                CardItem()
+            items(attendanceList) { attendance ->
+                AttendanceCard(attendance)
             }
         }
     }
 }
 
 @Composable
-fun CardItem() {
+fun AttendanceCard(
+    attendance: AttendanceEntity
+) {
+    val date = SimpleDateFormat(
+        "dd MMM yyyy",
+        Locale.getDefault()
+    ).format(Date(attendance.dateTime))
+
+    val time = SimpleDateFormat(
+        "hh:mm a",
+        Locale.getDefault()
+    ).format(Date(attendance.dateTime))
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(12.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center
+                .padding(16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Profile Icon",
+
+                AsyncImage(
+                    model = File(attendance.selfiePath),
+                    contentDescription = "Attendance selfie",
                     modifier = Modifier.size(60.dp),
-                    tint = Color.Black
+                    contentScale = ContentScale.Crop
                 )
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Row() {
-                        Text(
-                            text = "Date: ",
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Text(
-                            text = "Time: ",
-                            color = Color.Black,
-                            fontSize = 16.sp
-                        )
-                    }
-                    Text(text = "Latitude: ", color = Color.Black, fontSize = 16.sp)
-                    Text(text = "Longitude: ", color = Color.Black, fontSize = 16.sp)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text("Date: $date", fontSize = 16.sp)
+                    Text("Time: $time", fontSize = 16.sp)
+                    Text(
+                        "Latitude: ${attendance.latitude}",
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        "Longitude: ${attendance.longitude}",
+                        fontSize = 16.sp
+                    )
                 }
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ProfileScreenPreview() {
-    ProfileScreen()
 }
