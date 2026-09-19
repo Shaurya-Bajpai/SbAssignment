@@ -1,4 +1,4 @@
-package com.example.sbassignment.data.entity
+package com.example.sbassignment.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 data class AttendanceEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val empId: String,
+    val employeeId: String,
     val name: String,
     val selfiePath: String,
     val dateTime: Long,

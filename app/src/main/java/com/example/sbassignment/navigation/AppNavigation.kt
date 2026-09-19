@@ -17,6 +17,7 @@ import com.example.sbassignment.data.FaceCaptureResult
 import com.example.sbassignment.data.ImageStorage
 import com.example.sbassignment.data.repository.FaceRecognitionRepository
 import com.example.sbassignment.data.repository.StaffRepository
+import com.example.sbassignment.data.repository.AttendanceRepository
 import com.example.sbassignment.database.AppDatabase
 import com.example.sbassignment.screens.LoginScreen
 import com.example.sbassignment.screens.admin.AddStaffScreen
@@ -39,6 +40,7 @@ fun AppNavigation() {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val staffRepository = remember { StaffRepository(AppDatabase.getInstance(context).staffDao()) }
+    val attendanceRepository = remember { AttendanceRepository(AppDatabase.getInstance(context).attendanceDao()) }
 
     fun resetAddStaffForm() {
         staffName = ""
@@ -193,13 +195,34 @@ fun AppNavigation() {
                         val matcher = FaceRecognitionRepository()
                         val isMatch = matcher.isMatch(capturedEmbedding = result.embedding, registeredEmbedding = staff.faceEmbedding)
 
-                        if (isMatch) {
-                            Toast.makeText(context, "Face matched successfully", Toast.LENGTH_SHORT).show()
-                            Log.d("FACE_MATCH", "MATCH: ${staff.employeeId}")
-                        } else {
+                        if (!isMatch) {
                             Toast.makeText(context, "Face does not match", Toast.LENGTH_SHORT).show()
-                            Log.d("FACE_MATCH", "NO MATCH: ${staff.employeeId}")
+                            return@launch
                         }
+
+                        // Face matched → save selfie
+                        val selfiePath = withContext(Dispatchers.IO) {
+                            ImageStorage.saveStaffImage(
+                                context = context,
+                                empId = "${employeeId}_${System.currentTimeMillis()}",
+                                bitmap = result.image
+                            )
+                        }
+
+                        // Save attendance
+                        withContext(Dispatchers.IO) {
+                            attendanceRepository.markAttendance(
+                                employeeId = staff.employeeId,
+                                name = staff.name,
+                                selfiePath = selfiePath,
+                                dateTime = System.currentTimeMillis()
+                            )
+                        }
+
+                        Toast.makeText(context, "Attendance marked successfully", Toast.LENGTH_SHORT).show()
+                        Log.d("ATTENDANCE", "Attendance saved for ${staff.employeeId}")
+
+                        navController.popBackStack()
                     }
                 },
                 onBack = { navController.popBackStack() }

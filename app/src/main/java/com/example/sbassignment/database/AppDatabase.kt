@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 import com.example.sbassignment.data.convertor.Converters
 import com.example.sbassignment.dao.AttendanceDao
 import com.example.sbassignment.dao.StaffDao
-import com.example.sbassignment.data.entity.AttendanceEntity
+import com.example.sbassignment.data.AttendanceEntity
 import com.example.sbassignment.data.StaffEntity
 
 @Database(entities = [StaffEntity::class, AttendanceEntity::class], version = 1, exportSchema = false)
