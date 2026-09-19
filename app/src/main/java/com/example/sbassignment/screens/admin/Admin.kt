@@ -26,31 +26,56 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.sbassignment.data.StaffEntity
-
-val staffList = listOf(
-    StaffEntity(
-        employeeId = "1",
-        name = "John Doe",
-        faceEmbedding = floatArrayOf(0.1f, 0.2f, 0.3f),
-        faceImagePath = "face_image_path_1"
-    ),
-    StaffEntity(
-        employeeId = "2",
-        name = "Jane Smith",
-        faceEmbedding = floatArrayOf(0.1f, 0.2f, 0.3f),
-        faceImagePath = "face_image_path_2"
-    ),
-)
+import com.example.sbassignment.data.repository.StaffRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.collections.emptyList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminScreen(onAddStaffButton: () -> Unit = {}) {
+fun AdminScreen(
+    onAddStaffButton: () -> Unit = {},
+    staffRepository: StaffRepository
+) {
+    val scope = rememberCoroutineScope()
+    var staffList by remember { mutableStateOf<List<StaffEntity>>(emptyList()) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                scope.launch {
+                    staffList = withContext(Dispatchers.IO) {
+                        staffRepository.getAllStaff()
+                    }
+                }
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -84,8 +109,8 @@ fun AdminScreen(onAddStaffButton: () -> Unit = {}) {
             Spacer(modifier = Modifier.height(16.dp))
 
             // List of Staff Members
-            LazyColumn() {
-                items(staffList) { staff ->
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(items = staffList, key = { it.employeeId }) { staff ->
                     CardItem(staff)
                 }
             }
@@ -112,10 +137,4 @@ fun CardItem(staffMember: StaffEntity) {
             Text(text = staffMember.name, fontSize = 18.sp)
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AdminScreenPreview() {
-    AdminScreen()
 }

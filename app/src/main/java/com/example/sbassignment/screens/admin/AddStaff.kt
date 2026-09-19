@@ -42,10 +42,12 @@ fun AddStaffScreen(
     onCaptureFace: () -> Unit,
     onAddDetails: (name: String, empId: String, capturedImage: FaceCaptureResult) -> Unit,
     onReset: () -> Unit,
+    onBack: () -> Unit,
 ) {
     val capturedImage = capturedResult?.image
 
     BackHandler {
+        onBack()
         onReset()
     }
 
@@ -151,6 +153,7 @@ fun AddStaffScreenPreview() {
         capturedResult = null,
         onCaptureFace = {},
         onAddDetails = { _, _, _ -> },
+        onBack = {},
         onReset = {}
     )
 }
