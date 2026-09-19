@@ -46,6 +46,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.sbassignment.R
 import com.example.sbassignment.face.FaceCropper
+import com.example.sbassignment.face.FaceEmbeddingStore
 import com.example.sbassignment.face.FaceImageUtils
 import com.example.sbassignment.face.FaceNetModel
 import com.google.mlkit.vision.common.InputImage
@@ -76,6 +77,7 @@ fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
     var faceDetected by remember { mutableStateOf(false) }
     val faceNetModel = remember { FaceNetModel(context) }
     val faceDetector = remember { FaceDetection.getClient(detectorOptions) }
+    val embeddingStore = remember { FaceEmbeddingStore(context) }
 
     // Controller
     val cameraController = remember { LifecycleCameraController(context) }
@@ -326,6 +328,11 @@ fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
                                         norm = kotlin.math.sqrt(norm)
 
                                         Log.e("FACE_RECOGNITION", "Embedding L2 norm = $norm")
+
+                                        // Save the embedding of the staff
+                                        embeddingStore.saveEmbedding(staffId = staffId, embedding = embedding)
+
+                                        Log.e("FACE_RECOGNITION", "Embedding saved for staffId=$staffId")
 
                                         croppedFace.recycle()
                                         bitmap.recycle()
