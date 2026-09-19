@@ -6,6 +6,10 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -14,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
@@ -37,6 +42,7 @@ import com.example.sbassignment.screens.staff.StaffScreen
 import com.example.sbassignment.util.LocationHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -52,7 +58,6 @@ fun AppNavigation() {
     val attendanceRepository = remember { AttendanceRepository(AppDatabase.getInstance(context).attendanceDao()) }
 
     val sessionManager = remember { SessionManager(context) }
-    val userType by sessionManager.userType.collectAsState(initial = null)
 
     fun resetAddStaffForm() {
         staffName = ""
@@ -72,13 +77,24 @@ fun AppNavigation() {
         }
     }
 
-    NavHost(
-        navController = navController,
-        startDestination =
-            if(userType == "ADMIN") Screen.Admin.route
-            else if(userType == "STAFF") Screen.Staff.route
-            else Screen.Login.route
-    ) {
+    var startDestination by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        startDestination = when (sessionManager.userType.first()) {
+            "ADMIN" -> Screen.Admin.route
+            "STAFF" -> Screen.Staff.route
+            else -> Screen.Login.route
+        }
+    }
+
+    val start = startDestination
+    if (start == null) {
+        // Same color as the theme background, so there is no visible flash
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+        return
+    }
+
+    NavHost(navController = navController, startDestination = start) {
         // Login Screen
         composable(Screen.Login.route) {
             LoginScreen(
