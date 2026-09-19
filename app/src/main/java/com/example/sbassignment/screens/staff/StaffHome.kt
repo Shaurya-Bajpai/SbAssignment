@@ -272,11 +272,8 @@ fun StaffHomeScreen(
                         )
 
                     } else {
-
-                        Text(
-                            text = "Location will be available after GPS integration",
-                            fontSize = 14.sp
-                        )
+                        Text(text = "Latitude: ${latestAttendance!!.latitude}", fontSize = 14.sp)
+                        Text(text = "Longitude: ${latestAttendance!!.longitude}", fontSize = 14.sp)
                     }
                 }
             }
@@ -285,8 +282,7 @@ fun StaffHomeScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         // MARK ATTENDANCE CARD
-        ElevatedCard(
-            onClick = onMarkAttendance,
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .border(
@@ -295,25 +291,25 @@ fun StaffHomeScreen(
                 ),
             shape = RoundedCornerShape(16.dp)
         ) {
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(20.dp),
-                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
                 Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Mark Attendance",
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Attendance",
                     modifier = Modifier.size(30.dp)
                 )
 
                 Spacer(modifier = Modifier.size(12.dp))
 
                 Text(
-                    text = "Mark Attendance",
+                    text = if (latestAttendance != null)
+                        "Attendance Marked"
+                    else
+                        "Attendance Not Marked",
                     fontSize = 19.sp,
                     fontWeight = FontWeight.Bold
                 )

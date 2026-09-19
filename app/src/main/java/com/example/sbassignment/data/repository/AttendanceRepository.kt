@@ -8,7 +8,9 @@ class AttendanceRepository(private val attendanceDao: AttendanceDao) {
         employeeId: String,
         name: String,
         selfiePath: String,
-        dateTime: Long
+        dateTime: Long,
+        latitude: Double,
+        longitude: Double
     ) {
         attendanceDao.insertAttendance(
             AttendanceEntity(
@@ -16,8 +18,8 @@ class AttendanceRepository(private val attendanceDao: AttendanceDao) {
                 name = name,
                 selfiePath = selfiePath,
                 dateTime = dateTime,
-                latitude = 0.0,
-                longitude = 0.0
+                latitude = latitude,
+                longitude = longitude
             )
         )
     }
