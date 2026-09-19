@@ -48,6 +48,9 @@ dependencies {
     // ML Kit
     implementation(libs.face.detection)
 
+    // TensorFlow Lite
+    implementation(libs.tensorflow.lite)
+
     // Navigation
     implementation(libs.androidx.navigation.compose)
 

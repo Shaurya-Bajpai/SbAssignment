@@ -2,6 +2,8 @@ package com.example.sbassignment.screens.camera
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -39,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.sbassignment.R
+import com.example.sbassignment.face.FaceNetModel
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import java.util.concurrent.Executors
@@ -47,9 +50,45 @@ import java.util.concurrent.Executors
 @Composable
 fun FaceCameraScreen(staffId: String, onBack: () -> Unit) {
     val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        Toast.makeText(
+            context,
+            "FaceCameraScreen is running",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     val density = LocalDensity.current
     var faceDetected by remember { mutableStateOf(false) }
+
+    Log.e(
+        "CAMERA_SCREEN_TEST",
+        "FaceCameraScreen is running"
+    )
+    val faceNetModel = remember {
+        try {
+            FaceNetModel(context)
+        } catch (e: Exception) {
+
+            Toast.makeText(
+                context,
+                "FaceNet ERROR: ${e.javaClass.simpleName}",
+                Toast.LENGTH_LONG
+            ).show()
+
+            e.printStackTrace()
+
+            null
+        }
+    }
+
+//    DisposableEffect(Unit) {
+//        onDispose {
+//            faceNetModel.close()
+//        }
+//    }
 
     var hasCameraPermission by remember {
         mutableStateOf(
