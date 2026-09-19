@@ -24,6 +24,7 @@ import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -41,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,6 +50,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil3.compose.AsyncImage
+import com.example.sbassignment.R
 import com.example.sbassignment.data.StaffEntity
 import com.example.sbassignment.data.repository.StaffRepository
 import kotlinx.coroutines.Dispatchers
@@ -61,7 +64,8 @@ import kotlin.collections.emptyList
 fun AdminScreen(
     onAddStaffButton: () -> Unit = {},
     staffRepository: StaffRepository,
-    onStaffSelected: (String) -> Unit
+    onStaffSelected: (String) -> Unit,
+    onLogout: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     var staffList by remember { mutableStateOf<List<StaffEntity>>(emptyList()) }
@@ -92,7 +96,15 @@ fun AdminScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Black,
                     titleContentColor = Color.White
-                )
+                ),
+                actions = {
+                    IconButton(onClick = onLogout) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_logout_24),
+                            contentDescription = "Logout"
+                        )
+                    }
+                },
             )
         },
         floatingActionButton = {

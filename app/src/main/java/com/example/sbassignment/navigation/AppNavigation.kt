@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,6 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.sbassignment.data.FaceCaptureMode
 import com.example.sbassignment.data.FaceCaptureResult
 import com.example.sbassignment.data.ImageStorage
+import com.example.sbassignment.data.SessionManager
 import com.example.sbassignment.data.repository.FaceRecognitionRepository
 import com.example.sbassignment.data.repository.StaffRepository
 import com.example.sbassignment.data.repository.AttendanceRepository
@@ -49,25 +51,59 @@ fun AppNavigation() {
     val staffRepository = remember { StaffRepository(AppDatabase.getInstance(context).staffDao()) }
     val attendanceRepository = remember { AttendanceRepository(AppDatabase.getInstance(context).attendanceDao()) }
 
+    val sessionManager = remember { SessionManager(context) }
+    val userType by sessionManager.userType.collectAsState(initial = null)
+
     fun resetAddStaffForm() {
         staffName = ""
         staffEmpId = ""
         captureResult = null
     }
 
-    NavHost(navController = navController, startDestination = Screen.Login.route) {
+    fun logout() {
+        coroutineScope.launch {
+            sessionManager.logout()
+
+            navController.navigate(Screen.Login.route) {
+                popUpTo(0) {
+                    inclusive = true
+                }
+            }
+        }
+    }
+
+    NavHost(
+        navController = navController,
+        startDestination =
+            if(userType == "ADMIN") Screen.Admin.route
+            else if(userType == "STAFF") Screen.Staff.route
+            else Screen.Login.route
+    ) {
         // Login Screen
         composable(Screen.Login.route) {
             LoginScreen(
-                onAdminNavigate = { navController.navigate(Screen.Admin.route) },
+                onAdminNavigate = {
+                    coroutineScope.launch {
+                        sessionManager.login("ADMIN")
+                        navController.navigate(Screen.Admin.route) {
+                            popUpTo(Screen.Login.route) {
+                                inclusive = true
+                            }
+                        }
+                    }
+                },
                 onStaffNavigate = {
                     coroutineScope.launch {
                         val staffList = withContext(Dispatchers.IO) { staffRepository.getAllStaff() }
                         if (staffList.isEmpty()) {
                             Toast.makeText(context, "No staff registered. Please contact admin.", Toast.LENGTH_SHORT).show()
                         } else {
-
-                            navController.navigate(Screen.Staff.route)
+                            sessionManager.login("STAFF")
+                            navController.navigate(Screen.Staff.route){
+                                popUpTo(0) {
+                                    inclusive = true
+                                }
+                            }
                         }
                     }
                 }
@@ -81,7 +117,8 @@ fun AppNavigation() {
                 staffRepository = staffRepository,
                 onStaffSelected = { employeeId ->
                     navController.navigate("admin_profile/$employeeId")
-                }
+                },
+                onLogout = { logout() }
             )
         }
 
@@ -164,7 +201,11 @@ fun AppNavigation() {
             StaffScreen(
                 staffRepository = staffRepository,
                 onStaffSelected = { employeeId ->
-                    navController.navigate("staff_home/$employeeId")
+                    navController.navigate("staff_home/$employeeId") {
+                        popUpTo(0) {
+                            inclusive = true
+                        }
+                    }
                 }
             )
         }
@@ -176,7 +217,8 @@ fun AppNavigation() {
                 employeeId = employeeId,
                 staffRepository = staffRepository,
                 attendanceRepository = attendanceRepository,
-                onMarkAttendance = { navController.navigate("face_camera/$employeeId") }
+                onMarkAttendance = { navController.navigate("face_camera/$employeeId") },
+                onLogout = { logout() }
             )
         }
 

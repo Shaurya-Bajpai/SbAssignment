@@ -40,6 +40,9 @@ android {
 
 dependencies {
 
+    // Datastore
+    implementation(libs.datastore.preferences)
+
     // Location
     implementation(libs.play.services.location)
 
