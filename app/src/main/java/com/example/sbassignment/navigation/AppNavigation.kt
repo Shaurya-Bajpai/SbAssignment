@@ -15,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.sbassignment.data.FaceCaptureMode
 import com.example.sbassignment.data.FaceCaptureResult
 import com.example.sbassignment.data.ImageStorage
+import com.example.sbassignment.data.repository.FaceRecognitionRepository
 import com.example.sbassignment.data.repository.StaffRepository
 import com.example.sbassignment.database.AppDatabase
 import com.example.sbassignment.screens.LoginScreen
@@ -179,7 +180,27 @@ fun AppNavigation() {
             FaceCameraScreen(
                 mode = FaceCaptureMode.ATTENDANCE,
                 onCaptureResult = { result ->
-                    // Recognition will come here
+                    coroutineScope.launch {
+                        val staff = withContext(Dispatchers.IO) {
+                            staffRepository.getStaff(employeeId)
+                        }
+
+                        if (staff == null) {
+                            Toast.makeText(context, "Staff not found", Toast.LENGTH_SHORT).show()
+                            return@launch
+                        }
+
+                        val matcher = FaceRecognitionRepository()
+                        val isMatch = matcher.isMatch(capturedEmbedding = result.embedding, registeredEmbedding = staff.faceEmbedding)
+
+                        if (isMatch) {
+                            Toast.makeText(context, "Face matched successfully", Toast.LENGTH_SHORT).show()
+                            Log.d("FACE_MATCH", "MATCH: ${staff.employeeId}")
+                        } else {
+                            Toast.makeText(context, "Face does not match", Toast.LENGTH_SHORT).show()
+                            Log.d("FACE_MATCH", "NO MATCH: ${staff.employeeId}")
+                        }
+                    }
                 },
                 onBack = { navController.popBackStack() }
             )
