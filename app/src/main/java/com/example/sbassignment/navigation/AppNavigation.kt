@@ -160,18 +160,13 @@ fun AppNavigation() {
         }
 
         composable("staff_home/{employeeId}") { backStackEntry ->
-
-            val employeeId =
-                backStackEntry.arguments
-                    ?.getString("employeeId")
-                    .orEmpty()
+            val employeeId = backStackEntry.arguments?.getString("employeeId").orEmpty()
 
             StaffHomeScreen(
                 employeeId = employeeId,
                 staffRepository = staffRepository,
-                onMarkAttendance = {
-                    navController.navigate("face_camera/$employeeId")
-                }
+                attendanceRepository = attendanceRepository,
+                onMarkAttendance = { navController.navigate("face_camera/$employeeId") }
             )
         }
 

@@ -25,4 +25,8 @@ class AttendanceRepository(private val attendanceDao: AttendanceDao) {
     suspend fun getAllAttendance(): List<AttendanceEntity> {
         return attendanceDao.getAllAttendance()
     }
+
+    suspend fun getAttendanceForEmployee(employeeId: String): AttendanceEntity? {
+        return attendanceDao.getAttendanceForEmployee(employeeId)
+    }
 }
