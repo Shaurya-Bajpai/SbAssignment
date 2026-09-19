@@ -22,6 +22,7 @@ import com.example.sbassignment.screens.admin.AddStaffScreen
 import com.example.sbassignment.screens.admin.AdminScreen
 import com.example.sbassignment.screens.camera.FaceCameraScreen
 import com.example.sbassignment.screens.staff.ProfileScreen
+import com.example.sbassignment.screens.staff.StaffHomeScreen
 import com.example.sbassignment.screens.staff.StaffScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -49,7 +50,17 @@ fun AppNavigation() {
         composable(Screen.Login.route) {
             LoginScreen(
                 onAdminNavigate = { navController.navigate(Screen.Admin.route) },
-                onStaffNavigate = { navController.navigate(Screen.Staff.route) }
+                onStaffNavigate = {
+                    coroutineScope.launch {
+                        val staffList = withContext(Dispatchers.IO) { staffRepository.getAllStaff() }
+                        if (staffList.isEmpty()) {
+                            Toast.makeText(context, "No staff registered. Please contact admin.", Toast.LENGTH_SHORT).show()
+                        } else {
+
+                            navController.navigate(Screen.Staff.route)
+                        }
+                    }
+                }
             )
         }
 
@@ -138,24 +149,42 @@ fun AppNavigation() {
         // Staff Screen
         composable(Screen.Staff.route) {
             StaffScreen(
-                onStaffClick = { staffId ->
-                    navController.navigate("face_camera/$staffId")
+                staffRepository = staffRepository,
+                onStaffSelected = { employeeId ->
+                    navController.navigate("staff_home/$employeeId")
+                }
+            )
+        }
+
+        composable("staff_home/{employeeId}") { backStackEntry ->
+
+            val employeeId =
+                backStackEntry.arguments
+                    ?.getString("employeeId")
+                    .orEmpty()
+
+            StaffHomeScreen(
+                employeeId = employeeId,
+                staffRepository = staffRepository,
+                onMarkAttendance = {
+                    navController.navigate("face_camera/$employeeId")
                 }
             )
         }
 
         // STAFF ATTENDANCE CAMERA
-        composable("face_camera/{staffId}") { backStackEntry ->
-            val staffId = backStackEntry.arguments?.getString("staffId").orEmpty()
+        composable("face_camera/{employeeId}") { backStackEntry ->
+            val employeeId = backStackEntry.arguments?.getString("employeeId").orEmpty()
 
             FaceCameraScreen(
                 mode = FaceCaptureMode.ATTENDANCE,
                 onCaptureResult = { result ->
-                    // Attendance matching will be added later
+                    // Recognition will come here
                 },
                 onBack = { navController.popBackStack() }
             )
         }
+
         // ADMIN REGISTRATION CAMERA
         composable("register_camera") {
             FaceCameraScreen(

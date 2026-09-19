@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -21,124 +24,122 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import com.example.sbassignment.data.StaffEntity
+import com.example.sbassignment.data.repository.StaffRepository
 import com.example.sbassignment.screens.components.SectionDivider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 
 @Composable
-fun StaffScreen(onStaffClick: (String) -> Unit) {
-    var isAttendanceMarked by remember { mutableStateOf(false) }
+fun StaffScreen(
+    staffRepository: StaffRepository,
+    onStaffSelected: (String) -> Unit
+) {
+    var staffList by remember { mutableStateOf<List<StaffEntity>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        staffList = withContext(Dispatchers.IO) {
+            staffRepository.getAllStaff()
+        }
+    }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
 
         Text(
-            text = "Staff",
-            color = Color.Black,
+            text = "Select Staff",
             fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        if (staffList.isEmpty()) {
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            ElevatedCard(
-                onClick = {
-                    onStaffClick("1")
-//                    onStaffClick("${staff.id}")
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.CenterHorizontally)
-                    .border(BorderStroke(1.dp, Color.Black), RoundedCornerShape(12.dp)),
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if(isAttendanceMarked){
-                        Icon(imageVector = Icons.Default.Check, contentDescription = "Camera", tint = Color.Black, modifier = Modifier.size(25.dp))
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (isAttendanceMarked) "Attendance Marked" else "Mark Attendance",
-                        color = if (isAttendanceMarked) Color.Gray else Color.DarkGray,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.6.sp
+            Text(
+                text = "No staff registered",
+                fontSize = 18.sp,
+                color = Color.Gray
+            )
+
+        } else {
+
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(items = staffList, key = { it.employeeId }) { staff ->
+                    StaffCard(
+                        staff = staff,
+                        onClick = { onStaffSelected(staff.employeeId) }
                     )
                 }
-            }
-
-            // Attendance Details after marking attendance of the day
-            if (isAttendanceMarked) {
-                SectionDivider("Details")
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp)
-                        .border(BorderStroke(1.dp, Color.Black), RoundedCornerShape(12.dp)),
-                    shape = RoundedCornerShape(8.dp),
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        verticalArrangement = Arrangement.Center
-                    ) {
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = "Profile Icon",
-                                modifier = Modifier.size(100.dp),
-                                tint = Color.Gray
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Text(text = "Name: ", fontWeight = FontWeight.SemiBold, color = Color.Black, fontSize = 16.sp, modifier = Modifier.padding(bottom = 4.dp))
-                            Text(text = "Code: ", fontWeight = FontWeight.SemiBold, color = Color.Black, fontSize = 16.sp)
-                            Text(text = "Date: ", fontWeight = FontWeight.SemiBold, color = Color.Black, fontSize = 16.sp)
-                            Text(text = "Time: ", fontWeight = FontWeight.SemiBold, color = Color.Black, fontSize = 16.sp)
-                            Text(text = "Latitude: ", fontWeight = FontWeight.SemiBold, color = Color.Black, fontSize = 16.sp)
-                            Text(text = "Longitude: ", fontWeight = FontWeight.SemiBold, color = Color.Black, fontSize = 16.sp)
-                        }
-
-                    }
-
-                }
-
             }
         }
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun StaffScreenPreview() {
-    StaffScreen({})
+fun StaffCard(
+    staff: StaffEntity,
+    onClick: () -> Unit = {}
+) {
+    ElevatedCard(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .border(BorderStroke(1.dp, Color.Black), RoundedCornerShape(12.dp)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            AsyncImage(
+                model = File(staff.faceImagePath),
+                contentDescription = "Staff face",
+                modifier = Modifier
+                    .size(70.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column {
+                Text(
+                    text = staff.name,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "Employee ID: ${staff.employeeId}",
+                    fontSize = 14.sp
+                )
+            }
+        }
+    }
 }
