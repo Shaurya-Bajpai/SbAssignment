@@ -51,6 +51,10 @@ dependencies {
     // TensorFlow Lite
     implementation(libs.tensorflow.lite)
 
+    // Room
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
